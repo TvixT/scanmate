@@ -1,0 +1,9 @@
+# This is a placeholder for app_icon.png
+# In production, this would be a 1024x1024 PNG image with:
+# - Blue gradient background (#2563EB to #1D4ED8)
+# - White scanner frame outline
+# - Business card representation inside
+# - Professional, modern design
+
+# For now, copy any existing PNG file here or use the Python script
+# in scripts/generate_placeholders.py to create basic placeholder images

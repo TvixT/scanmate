@@ -1,0 +1,6 @@
+# This is a placeholder for splash_icon_dark.png
+# In production, this would be identical to splash_icon.png
+# since it uses white elements on transparent background
+
+# For now, copy any existing PNG file here or use the Python script
+# in scripts/generate_placeholders.py to create basic placeholder images

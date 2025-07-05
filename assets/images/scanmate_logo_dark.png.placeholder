@@ -1,0 +1,6 @@
+# This is a placeholder for scanmate_logo_dark.png
+# In production, this would be identical to scanmate_logo.png 
+# since the logo is designed for dark backgrounds
+
+# For now, copy any existing PNG file here or use the Python script
+# in scripts/generate_placeholders.py to create basic placeholder images

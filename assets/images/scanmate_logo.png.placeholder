@@ -1,0 +1,8 @@
+# This is a placeholder for scanmate_logo.png
+# In production, this would be a 300x80 PNG image with:
+# - Transparent background
+# - "ScanMate" text in white/brand colors
+# - Professional typography
+
+# For now, copy any existing PNG file here or use the Python script
+# in scripts/generate_placeholders.py to create basic placeholder images

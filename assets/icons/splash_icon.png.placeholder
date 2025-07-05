@@ -1,0 +1,8 @@
+# This is a placeholder for splash_icon.png
+# In production, this would be a 512x512 PNG image with:
+# - Transparent background
+# - White scanner icon
+# - Used on colored splash background
+
+# For now, copy any existing PNG file here or use the Python script
+# in scripts/generate_placeholders.py to create basic placeholder images
