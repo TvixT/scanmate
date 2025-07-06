@@ -1926,3 +1926,26 @@ try {
 - ✅ No memory leaks from proper state management
 
 **Real-Time Statistics Fix**: This enhancement transforms the home screen from displaying static, misleading information to providing dynamic, accurate insights into user activity. The implementation ensures both technical reliability and user trust through proper data handling and responsive UI updates.
+
+---
+
+## Phone and Address Extraction Improvements - July 6, 2025
+
+### What
+- Enhanced phone extraction logic to support international numbers (e.g., "+011 123 456 789") in addition to US numbers.
+- Added address extraction logic: detects lines with a comma or period that also contain both numbers and letters.
+- Improved fallback logic for missing fields.
+
+### Why
+- Previous phone extraction only supported US-style numbers and missed international formats, leading to incomplete contact data for global users.
+- Address extraction was previously heuristic/fallback only; now it actively detects likely address lines, improving accuracy for business cards and documents.
+- These changes make ScanMate more robust and user-friendly for a wider range of scanned documents and international users.
+
+### How
+- Updated phone extraction in `ScanService.extractContactInfo` to:
+  - Use a regex for international numbers starting with "+" and at least 8 digits.
+  - Fallback to US number extraction and formatting if not international.
+- Added address extraction in `_extractNameAndCompany`:
+  - Scans for lines containing a comma or period, and both numbers and letters.
+  - Sets the first such line as the address if not already set.
+- Retained and improved fallback logic for non-English or unrecognized text, ensuring all key fields are populated when possible.

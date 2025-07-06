@@ -8,7 +8,9 @@ class ScanService {
   // Scan barcode from image
   static Future<List<Barcode>> scanBarcode(InputImage inputImage) async {
     try {
-      final List<Barcode> barcodes = await _barcodeScanner.processImage(inputImage);
+      final List<Barcode> barcodes = await _barcodeScanner.processImage(
+        inputImage,
+      );
       return barcodes;
     } catch (e) {
       throw Exception('Failed to scan barcode: $e');
@@ -18,7 +20,9 @@ class ScanService {
   // Recognize text from image
   static Future<RecognizedText> recognizeText(InputImage inputImage) async {
     try {
-      final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
+      final RecognizedText recognizedText = await _textRecognizer.processImage(
+        inputImage,
+      );
       return recognizedText;
     } catch (e) {
       throw Exception('Failed to recognize text: $e');
@@ -26,43 +30,68 @@ class ScanService {
   }
 
   // Extract contact information from recognized text
-  static Future<Map<String, String>> extractContactInfo(String recognizedText) async {
+  static Future<Map<String, String>> extractContactInfo(
+    String recognizedText,
+  ) async {
     final contactData = <String, String>{};
-    
+
     if (recognizedText.isEmpty) {
       return contactData;
     }
 
+    // Debug: print recognized text before extraction
+    print('[ScanService] Recognized text before extraction:');
+    print(recognizedText);
+
     // Clean up the text
-    final lines = recognizedText
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    final lines =
+        recognizedText
+            .split('\n')
+            .map((line) => line.trim())
+            .where((line) => line.isNotEmpty)
+            .toList();
 
     // Extract patterns
     for (final line in lines) {
       // Email extraction
-      final emailRegex = RegExp(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b');
+      final emailRegex = RegExp(
+        r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+      );
       final emailMatch = emailRegex.firstMatch(line);
       if (emailMatch != null && !contactData.containsKey('email')) {
         contactData['email'] = emailMatch.group(0)!;
       }
 
       // Phone extraction
-      final phoneRegex = RegExp(r'(\+?1?[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})');
-      final phoneMatch = phoneRegex.firstMatch(line);
-      if (phoneMatch != null && !contactData.containsKey('phone')) {
-        contactData['phone'] = phoneMatch.group(0)!.replaceAll(RegExp(r'[^\d+]'), '');
-        // Format phone number
-        if (contactData['phone']!.length == 10) {
-          final phone = contactData['phone']!;
-          contactData['phone'] = '+1 (${phone.substring(0, 3)}) ${phone.substring(3, 6)}-${phone.substring(6)}';
+      // Match international numbers starting with + and at least 8 digits, or US numbers
+      final intlPhoneRegex = RegExp(r'\+\d[\d\s\-]{7,}');
+      final usPhoneRegex = RegExp(
+        r'(\+?1?[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})',
+      );
+      final intlMatch = intlPhoneRegex.firstMatch(line);
+      final usMatch = usPhoneRegex.firstMatch(line);
+      if (intlMatch != null && !contactData.containsKey('phone')) {
+        // Clean up: keep + and digits only
+        contactData['phone'] = intlMatch
+            .group(0)!
+            .replaceAll(RegExp(r'[^\d+]'), '');
+      } else if (usMatch != null && !contactData.containsKey('phone')) {
+        String rawPhone = usMatch.group(0)!.replaceAll(RegExp(r'[^\d+]'), '');
+        if (line.trim().startsWith('+')) {
+          contactData['phone'] = rawPhone;
+        } else if (rawPhone.length == 10) {
+          contactData['phone'] =
+              '+1 (${rawPhone.substring(0, 3)}) ${rawPhone.substring(3, 6)}-${rawPhone.substring(6)}';
+        } else {
+          contactData['phone'] = rawPhone;
         }
       }
 
       // Website extraction
-      final websiteRegex = RegExp(r'(www\.[\w\-\.]+\.\w+)|([\w\-\.]+\.(com|org|net|edu|gov|mil|int|co|io))', caseSensitive: false);
+      final websiteRegex = RegExp(
+        r'(www\.[\w\-\.]+\.\w+)|([\w\-\.]+\.(com|org|net|edu|gov|mil|int|co|io))',
+        caseSensitive: false,
+      );
       final websiteMatch = websiteRegex.firstMatch(line);
       if (websiteMatch != null && !contactData.containsKey('website')) {
         String website = websiteMatch.group(0)!;
@@ -76,21 +105,97 @@ class ScanService {
     // Extract name and company (heuristic approach)
     _extractNameAndCompany(lines, contactData);
 
+    // Debug: print extracted contact data
+    print('[ScanService] Extracted contact data:');
+    contactData.forEach((key, value) {
+      print('  $key: $value');
+    });
     return contactData;
   }
 
-  static void _extractNameAndCompany(List<String> lines, Map<String, String> contactData) {
+  static void _extractNameAndCompany(
+    List<String> lines,
+    Map<String, String> contactData,
+  ) {
     // Skip lines that contain email, phone, or website
-    final contentLines = lines.where((line) {
+    final contentLines =
+        lines.where((line) {
+          final lowerLine = line.toLowerCase();
+          return !lowerLine.contains('@') &&
+              !RegExp(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}').hasMatch(line) &&
+              !lowerLine.contains('www.') &&
+              !lowerLine.contains('.com') &&
+              !lowerLine.contains('.org') &&
+              !lowerLine.contains('.net') &&
+              line.length > 2;
+        }).toList();
+
+    // Title extraction logic
+    final titleKeywords = [
+      'manager',
+      'engineer',
+      'developer',
+      'director',
+      'lead',
+      'officer',
+      'president',
+      'analyst',
+      'consultant',
+      'specialist',
+      'coordinator',
+      'administrator',
+      'designer',
+      'architect',
+      'supervisor',
+      'head',
+      'chief',
+      'founder',
+      'owner',
+      'partner',
+      'executive',
+      'assistant',
+      'associate',
+      'intern',
+      'representative',
+      'scientist',
+      'technician',
+      'strategist',
+      'producer',
+      'editor',
+      'writer',
+      'accountant',
+      'marketer',
+      'sales',
+      'trainer',
+      'teacher',
+      'professor',
+      'principal',
+      'officer',
+      'agent',
+      'advisor',
+      'auditor',
+      'planner',
+      'controller',
+      'inspector',
+      'broker',
+      'attorney',
+      'lawyer',
+      'counsel',
+      'paralegal',
+      'recruiter',
+      'researcher',
+      'student',
+    ];
+    for (final line in contentLines) {
       final lowerLine = line.toLowerCase();
-      return !lowerLine.contains('@') &&
-          !RegExp(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}').hasMatch(line) &&
-          !lowerLine.contains('www.') &&
-          !lowerLine.contains('.com') &&
-          !lowerLine.contains('.org') &&
-          !lowerLine.contains('.net') &&
-          line.length > 2;
-    }).toList();
+      final startsWithUpper =
+          line.isNotEmpty && line[0] == line[0].toUpperCase();
+      if (titleKeywords.any((kw) => lowerLine.contains(kw)) &&
+          (startsWithUpper || line == line.toUpperCase())) {
+        contactData['title'] = line;
+        break;
+      }
+    }
 
     if (contentLines.isNotEmpty) {
       // First meaningful line is likely the name
@@ -108,44 +213,63 @@ class ScanService {
         }
       }
 
-      // If no name found yet, try to extract from other lines
-      if (!contactData.containsKey('name')) {
-        for (final line in contentLines) {
-          if (_isLikelyName(line)) {
-            contactData['name'] = line;
-            break;
-          }
+      // Address extraction logic
+      for (final line in contentLines) {
+        final hasCommaOrDot = line.contains(',') || line.contains('.');
+        final hasNumber = RegExp(r'\d').hasMatch(line);
+        final hasLetter = RegExp(r'[A-Za-z]').hasMatch(line);
+        if (hasCommaOrDot &&
+            hasNumber &&
+            hasLetter &&
+            !contactData.containsKey('address')) {
+          contactData['address'] = line;
+          break;
         }
       }
+
+      // Fallback for non-English or unrecognized fields
+      final fallback = contentLines.first;
+      if (!contactData.containsKey('name')) {
+        contactData['name'] = fallback;
+      }
+      if (!contactData.containsKey('title')) {
+        contactData['title'] = fallback;
+      }
+
     }
   }
 
   static bool _isLikelyName(String text) {
-    // Check if it looks like a person's name
+    // Name: full uppercase and exactly two words
     final words = text.split(' ');
-    if (words.length < 1 || words.length > 4) return false;
-    
-    // Check if words start with capital letters
-    final hasCapitalizedWords = words.every((word) => 
-        word.isNotEmpty && word[0].toUpperCase() == word[0]);
-    
-    // Check if it's not all caps (likely company name)
-    final isAllCaps = text == text.toUpperCase();
-    
-    return hasCapitalizedWords && !isAllCaps && text.length > 2;
+    return text == text.toUpperCase() && words.length == 2;
   }
 
   static bool _isLikelyCompany(String text) {
-    // Check for common company indicators
+    // Company: full uppercase and exactly one word, or contains company indicators
+    final words = text.split(' ');
     final companyIndicators = [
-      'inc', 'corp', 'llc', 'ltd', 'company', 'co', 'corporation',
-      'incorporated', 'limited', 'group', 'enterprises', 'solutions',
-      'services', 'consulting', 'technology', 'tech', 'systems'
+      'inc',
+      'corp',
+      'llc',
+      'ltd',
+      'company',
+      'co',
+      'corporation',
+      'incorporated',
+      'limited',
+      'group',
+      'enterprises',
+      'solutions',
+      'services',
+      'consulting',
+      'technology',
+      'tech',
+      'systems',
     ];
-    
     final lowerText = text.toLowerCase();
-    return companyIndicators.any((indicator) => lowerText.contains(indicator)) ||
-           text == text.toUpperCase(); // All caps might be company name
+    return (text == text.toUpperCase() && words.length == 1) ||
+        companyIndicators.any((indicator) => lowerText.contains(indicator));
   }
 
   // Dispose resources

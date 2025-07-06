@@ -12,7 +12,7 @@ class ReviewContactScreen extends StatefulWidget {
   final String? editingContactId;
 
   const ReviewContactScreen({
-    super.key, 
+    super.key,
     this.contactData,
     this.editingContactId,
   });
@@ -29,18 +29,18 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
   late TextEditingController _websiteController;
   late TextEditingController _titleController;
   late TextEditingController _addressController;
-  
+
   bool _isLoading = false;
   bool _isLoadingContact = false;
   final _formKey = GlobalKey<FormState>();
-  
+
   // Confidence scores (mock data for demonstration)
   final Map<String, double> _confidenceScores = {};
-  
+
   // Image source detection
   String? _imageSource;
   bool get _isFromCamera => _imageSource == 'camera';
-  
+
   // For editing existing contacts
   Contact? _existingContact;
   bool get _isEditMode => widget.editingContactId != null;
@@ -48,7 +48,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     if (_isEditMode) {
       // Initialize with empty values and load existing contact
       _initializeEmptyControllers();
@@ -59,7 +59,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
       _initializeControllers(data);
     }
   }
-  
+
   void _initializeEmptyControllers() {
     _nameController = TextEditingController();
     _companyController = TextEditingController();
@@ -70,7 +70,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
     _addressController = TextEditingController();
     _imageSource = 'unknown';
   }
-  
+
   void _initializeControllers(Map<String, dynamic> data) {
     _nameController = TextEditingController(text: data['name'] ?? '');
     _companyController = TextEditingController(text: data['company'] ?? '');
@@ -79,21 +79,21 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
     _websiteController = TextEditingController(text: data['website'] ?? '');
     _titleController = TextEditingController(text: data['title'] ?? '');
     _addressController = TextEditingController(text: data['address'] ?? '');
-    
+
     // Detect image source (default to camera if not specified)
     _imageSource = data['source'] as String? ?? 'camera';
-    
+
     // Generate confidence scores based on field content
     _generateConfidenceScores(data);
   }
 
   Future<void> _loadExistingContact() async {
     if (widget.editingContactId == null) return;
-    
+
     setState(() {
       _isLoadingContact = true;
     });
-    
+
     try {
       final contact = await StorageService.getContact(widget.editingContactId!);
       if (contact != null && mounted) {
@@ -107,7 +107,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
           _titleController.text = contact.title ?? '';
           _addressController.text = contact.address ?? '';
           _imageSource = contact.source ?? 'unknown';
-          
+
           // Generate confidence scores for existing contact
           _generateConfidenceScoresFromContact(contact);
         });
@@ -125,7 +125,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
       }
     }
   }
-  
+
   void _generateConfidenceScoresFromContact(Contact contact) {
     _confidenceScores['name'] = _calculateFieldConfidence(contact.name);
     _confidenceScores['company'] = _calculateFieldConfidence(contact.company);
@@ -146,26 +146,26 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
     _confidenceScores['title'] = _calculateFieldConfidence(data['title']);
     _confidenceScores['address'] = _calculateFieldConfidence(data['address']);
   }
-  
+
   double _calculateFieldConfidence(String? value) {
     if (value == null || value.isEmpty) return 0.0;
     if (value.length < 3) return 0.6;
     if (value.length < 10) return 0.8;
     return 0.95;
   }
-  
+
   double _calculateEmailConfidence(String? email) {
     if (email == null || email.isEmpty) return 0.0;
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email) ? 0.98 : 0.7;
   }
-  
+
   double _calculatePhoneConfidence(String? phone) {
     if (phone == null || phone.isEmpty) return 0.0;
     final phoneRegex = RegExp(r'[\d\s\-\(\)\+]{10,}');
     return phoneRegex.hasMatch(phone) ? 0.92 : 0.75;
   }
-  
+
   double _calculateWebsiteConfidence(String? website) {
     if (website == null || website.isEmpty) return 0.0;
     final websiteRegex = RegExp(r'^(www\.)?[\w\-\.]+\.\w+');
@@ -198,17 +198,14 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
               SizedBox(height: 16),
               Text(
                 'Loading contact...',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF64748B),
-                ),
+                style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
               ),
             ],
           ),
         ),
       );
     }
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: _buildAppBar(),
@@ -223,19 +220,19 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
                   children: [
                     // Card Preview Section
                     _buildCardPreview(),
-                    
+
                     // Contact Information Form
                     _buildContactForm(),
-                    
+
                     // Confidence Overview
                     _buildConfidenceOverview(),
-                    
+
                     const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom Action Bar
             _buildBottomActionBar(),
           ],
@@ -251,10 +248,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
       foregroundColor: const Color(0xFF1E293B),
       title: Text(
         _isEditMode ? 'Edit Contact' : 'Review Contact',
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
       ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -272,13 +266,13 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
 
   Widget _buildCardPreview() {
     String? imagePath;
-    
+
     if (_isEditMode) {
       imagePath = _existingContact?.imagePath;
     } else {
       imagePath = widget.contactData?['imagePath'] as String?;
     }
-    
+
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(20),
@@ -299,17 +293,21 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
           Row(
             children: [
               Icon(
-                _isEditMode 
+                _isEditMode
                     ? Icons.edit_rounded
-                    : (_isFromCamera ? Icons.camera_alt_rounded : Icons.photo_library_rounded),
+                    : (_isFromCamera
+                        ? Icons.camera_alt_rounded
+                        : Icons.photo_library_rounded),
                 color: const Color(0xFF3B82F6),
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
-                _isEditMode 
+                _isEditMode
                     ? 'Edit Contact Information'
-                    : (_isFromCamera ? 'Scanned Business Card' : 'Imported Business Card'),
+                    : (_isFromCamera
+                        ? 'Scanned Business Card'
+                        : 'Imported Business Card'),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -319,55 +317,50 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Card Thumbnail or Placeholder
           Container(
             width: double.infinity,
             height: 140,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-                width: 2,
-              ),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
             ),
-            child: imagePath != null && File(imagePath).existsSync()
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      File(imagePath),
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+            child:
+                imagePath != null && File(imagePath).existsSync()
+                    ? ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.image_outlined,
-                          size: 40,
-                          color: Color(0xFF94A3B8),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Business Card Image',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                      child: Image.file(File(imagePath), fit: BoxFit.cover),
+                    )
+                    : Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_outlined,
+                            size: 40,
+                            color: Color(0xFF94A3B8),
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 8),
+                          Text(
+                            'Business Card Image',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // OCR Status
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -385,7 +378,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _isFromCamera ? 'Camera Scan Complete' : 'Gallery Import Complete',
+                  _isFromCamera
+                      ? 'Camera Scan Complete'
+                      : 'Gallery Import Complete',
                   style: const TextStyle(
                     color: Color(0xFF10B981),
                     fontSize: 12,
@@ -437,7 +432,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          
+
           // Name field
           _buildEnhancedTextField(
             controller: _nameController,
@@ -446,9 +441,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             required: true,
             confidence: _confidenceScores['name'] ?? 0.0,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Company field
           _buildEnhancedTextField(
             controller: _companyController,
@@ -456,9 +451,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             icon: Icons.business_outlined,
             confidence: _confidenceScores['company'] ?? 0.0,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Title field
           _buildEnhancedTextField(
             controller: _titleController,
@@ -466,9 +461,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             icon: Icons.work_outline,
             confidence: _confidenceScores['title'] ?? 0.0,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Email field
           _buildEnhancedTextField(
             controller: _emailController,
@@ -478,9 +473,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             confidence: _confidenceScores['email'] ?? 0.0,
             validator: _validateEmail,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Phone field
           _buildEnhancedTextField(
             controller: _phoneController,
@@ -489,9 +484,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             keyboardType: TextInputType.phone,
             confidence: _confidenceScores['phone'] ?? 0.0,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Website field
           _buildEnhancedTextField(
             controller: _websiteController,
@@ -501,9 +496,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             confidence: _confidenceScores['website'] ?? 0.0,
             validator: _validateWebsite,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Address field
           _buildEnhancedTextField(
             controller: _addressController,
@@ -546,28 +541,18 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        
+
         // Text field
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
           validator: validator,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Color(0xFF1F2937),
-          ),
+          style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
           decoration: InputDecoration(
-            prefixIcon: Icon(
-              icon,
-              color: const Color(0xFF6B7280),
-              size: 20,
-            ),
+            prefixIcon: Icon(icon, color: const Color(0xFF6B7280), size: 20),
             hintText: 'Enter $label',
-            hintStyle: const TextStyle(
-              color: Color(0xFF9CA3AF),
-              fontSize: 16,
-            ),
+            hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 16),
             filled: true,
             fillColor: const Color(0xFFF9FAFB),
             border: OutlineInputBorder(
@@ -586,10 +571,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF3B82F6),
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -612,7 +594,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
     Color indicatorColor;
     String confidenceText;
     IconData indicatorIcon;
-    
+
     if (confidence >= 0.9) {
       indicatorColor = const Color(0xFF10B981);
       confidenceText = 'High';
@@ -626,7 +608,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
       confidenceText = 'Low';
       indicatorIcon = Icons.error_outline;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -636,11 +618,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            indicatorIcon,
-            size: 12,
-            color: indicatorColor,
-          ),
+          Icon(indicatorIcon, size: 12, color: indicatorColor),
           const SizedBox(width: 4),
           Text(
             confidenceText,
@@ -656,18 +634,17 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
   }
 
   Widget _buildConfidenceOverview() {
-    final extractedFields = _confidenceScores.entries
-        .where((entry) => entry.value > 0.0)
-        .toList();
-    
+    final extractedFields =
+        _confidenceScores.entries.where((entry) => entry.value > 0.0).toList();
+
     if (extractedFields.isEmpty) {
       return const SizedBox.shrink();
     }
-    
-    final overallConfidence = extractedFields
-        .map((e) => e.value)
-        .reduce((a, b) => a + b) / extractedFields.length;
-    
+
+    final overallConfidence =
+        extractedFields.map((e) => e.value).reduce((a, b) => a + b) /
+        extractedFields.length;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       padding: const EdgeInsets.all(20),
@@ -704,7 +681,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Overall confidence
           Row(
             children: [
@@ -733,11 +710,15 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: overallConfidence >= 0.8
-                      ? const Color(0xFF10B981).withOpacity(0.1)
-                      : const Color(0xFFF59E0B).withOpacity(0.1),
+                  color:
+                      overallConfidence >= 0.8
+                          ? const Color(0xFF10B981).withOpacity(0.1)
+                          : const Color(0xFFF59E0B).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -745,17 +726,18 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: overallConfidence >= 0.8
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFF59E0B),
+                    color:
+                        overallConfidence >= 0.8
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFF59E0B),
                   ),
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           const Text(
             'Please review and edit the information above to ensure accuracy.',
             style: TextStyle(
@@ -791,16 +773,15 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _handleRetakeOrReimport(),
                 icon: Icon(
-                  _isFromCamera ? Icons.camera_alt_outlined : Icons.photo_library_outlined,
+                  _isFromCamera
+                      ? Icons.camera_alt_outlined
+                      : Icons.photo_library_outlined,
                   size: 18,
                 ),
                 label: Text(_isFromCamera ? 'Retake' : 'Re-import'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF6B7280),
-                  side: const BorderSide(
-                    color: Color(0xFFE5E7EB),
-                    width: 1.5,
-                  ),
+                  side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -808,30 +789,32 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 12),
-            
+
             // Save button
             Expanded(
               flex: 2,
               child: ElevatedButton.icon(
                 onPressed: _isLoading ? null : _saveContact,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Icon(
-                        Icons.save_outlined,
-                        size: 18,
-                      ),
-                label: Text(_isLoading 
-                    ? (_isEditMode ? 'Updating...' : 'Saving...') 
-                    : (_isEditMode ? 'Update Contact' : 'Save Contact')),
+                icon:
+                    _isLoading
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : const Icon(Icons.save_outlined, size: 18),
+                label: Text(
+                  _isLoading
+                      ? (_isEditMode ? 'Updating...' : 'Saving...')
+                      : (_isEditMode ? 'Update Contact' : 'Save Contact'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3B82F6),
                   foregroundColor: Colors.white,
@@ -864,39 +847,40 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
   void _showHelpDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.help_outline, color: Color(0xFF3B82F6)),
-            SizedBox(width: 12),
-            Text('How to Review'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '• Check extracted information for accuracy\n'
-              '• Green indicators show high confidence\n'
-              '• Yellow/Red indicators suggest verification needed\n'
-              '• Edit any incorrect information\n'
-              '• Tap "Save Contact" when ready\n\n'
-              '${_isFromCamera ? "• Tap \"Retake\" to scan a new card" : "• Tap \"Re-import\" to select a different image"}',
-              style: const TextStyle(height: 1.5),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
+            title: const Row(
+              children: [
+                Icon(Icons.help_outline, color: Color(0xFF3B82F6)),
+                SizedBox(width: 12),
+                Text('How to Review'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• Check extracted information for accuracy\n'
+                  '• Green indicators show high confidence\n'
+                  '• Yellow/Red indicators suggest verification needed\n'
+                  '• Edit any incorrect information\n'
+                  '• Tap "Save Contact" when ready\n\n'
+                  '${_isFromCamera ? "• Tap \"Retake\" to scan a new card" : "• Tap \"Re-import\" to select a different image"}',
+                  style: const TextStyle(height: 1.5),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Got it'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -929,52 +913,86 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
 
     try {
       Contact contact;
-      
+
       if (_isEditMode && _existingContact != null) {
         // Update existing contact
         contact = Contact(
           id: _existingContact!.id,
           name: _nameController.text.trim(),
-          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-          company: _companyController.text.trim().isEmpty ? null : _companyController.text.trim(),
-          title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-          website: _websiteController.text.trim().isEmpty ? null : _websiteController.text.trim(),
-          address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+          email:
+              _emailController.text.trim().isEmpty
+                  ? null
+                  : _emailController.text.trim(),
+          phone:
+              _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+          company:
+              _companyController.text.trim().isEmpty
+                  ? null
+                  : _companyController.text.trim(),
+          title:
+              _titleController.text.trim().isEmpty
+                  ? null
+                  : _titleController.text.trim(),
+          website:
+              _websiteController.text.trim().isEmpty
+                  ? null
+                  : _websiteController.text.trim(),
+          address:
+              _addressController.text.trim().isEmpty
+                  ? null
+                  : _addressController.text.trim(),
           createdAt: _existingContact!.createdAt, // Keep original creation time
           imagePath: _existingContact!.imagePath, // Keep existing image
           source: _existingContact!.source ?? 'unknown',
           confidence: _existingContact!.confidence,
         );
-        
+
         // Update contact in storage
         await StorageService.saveContact(contact);
-        
+
         // Update device contacts
         final deviceSaved = await ContactService.saveToDevice(contact);
-        
+
         if (mounted) {
           // Navigate back with success message
-          final message = deviceSaved 
-              ? 'Contact "${contact.name}" has been updated in your device and app history!'
-              : 'Contact "${contact.name}" has been updated in app history!';
-          
-          context.pushReplacement(
-            AppRouter.success,
-            extra: message,
-          );
+          final message =
+              deviceSaved
+                  ? 'Contact "${contact.name}" has been updated in your device and app history!'
+                  : 'Contact "${contact.name}" has been updated in app history!';
+
+          context.pushReplacement(AppRouter.success, extra: message);
         }
       } else {
         // Create new contact
         contact = Contact(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: _nameController.text.trim(),
-          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-          company: _companyController.text.trim().isEmpty ? null : _companyController.text.trim(),
-          title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-          website: _websiteController.text.trim().isEmpty ? null : _websiteController.text.trim(),
-          address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+          email:
+              _emailController.text.trim().isEmpty
+                  ? null
+                  : _emailController.text.trim(),
+          phone:
+              _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+          company:
+              _companyController.text.trim().isEmpty
+                  ? null
+                  : _companyController.text.trim(),
+          title:
+              _titleController.text.trim().isEmpty
+                  ? null
+                  : _titleController.text.trim(),
+          website:
+              _websiteController.text.trim().isEmpty
+                  ? null
+                  : _websiteController.text.trim(),
+          address:
+              _addressController.text.trim().isEmpty
+                  ? null
+                  : _addressController.text.trim(),
           createdAt: DateTime.now(),
           imagePath: widget.contactData?['imagePath'],
           source: _imageSource ?? 'unknown',
@@ -984,7 +1002,9 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
         // Save image to local storage if available
         String? savedImagePath;
         if (widget.contactData?['imagePath'] != null) {
-          savedImagePath = await StorageService.saveImage(widget.contactData!['imagePath']);
+          savedImagePath = await StorageService.saveImage(
+            widget.contactData!['imagePath'],
+          );
           if (savedImagePath != null) {
             // Update contact with saved image path
             final updatedContact = Contact(
@@ -1001,23 +1021,23 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
               source: contact.source,
               confidence: contact.confidence,
             );
-            
+
             // Save to local storage
             await StorageService.saveContact(updatedContact);
-            
+
             // Save to device contacts
-            final deviceSaved = await ContactService.saveToDevice(updatedContact);
-            
+            final deviceSaved = await ContactService.saveToDevice(
+              updatedContact,
+            );
+
             if (mounted) {
               // Navigate to success screen
-              final message = deviceSaved 
-                  ? 'Contact "${contact.name}" has been saved to your device and app history!'
-                  : 'Contact "${contact.name}" has been saved to app history!';
-              
-              context.pushReplacement(
-                AppRouter.success,
-                extra: message,
-              );
+              final message =
+                  deviceSaved
+                      ? 'Contact "${contact.name}" has been saved to your device and app history!'
+                      : 'Contact "${contact.name}" has been saved to app history!';
+
+              context.pushReplacement(AppRouter.success, extra: message);
             }
           } else {
             throw Exception('Failed to save contact image');
@@ -1025,27 +1045,27 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
         } else {
           // Save without image
           await StorageService.saveContact(contact);
-          
+
           // Save to device contacts
           final deviceSaved = await ContactService.saveToDevice(contact);
-          
+
           if (mounted) {
             // Navigate to success screen
-            final message = deviceSaved 
-                ? 'Contact "${contact.name}" has been saved to your device and app history!'
-                : 'Contact "${contact.name}" has been saved to app history!';
-            
-            context.pushReplacement(
-              AppRouter.success,
-              extra: message,
-            );
+            final message =
+                deviceSaved
+                    ? 'Contact "${contact.name}" has been saved to your device and app history!'
+                    : 'Contact "${contact.name}" has been saved to app history!';
+
+            context.pushReplacement(AppRouter.success, extra: message);
           }
         }
       }
     } catch (e) {
       Logger.error('Failed to ${_isEditMode ? 'update' : 'save'} contact: $e');
       if (mounted) {
-        _showError('Failed to ${_isEditMode ? 'update' : 'save'} contact. Please try again.');
+        _showError(
+          'Failed to ${_isEditMode ? 'update' : 'save'} contact. Please try again.',
+        );
       }
     } finally {
       if (mounted) {
@@ -1062,9 +1082,7 @@ class _ReviewContactScreenState extends State<ReviewContactScreen> {
         content: Text(message),
         backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         margin: const EdgeInsets.all(16),
       ),
     );
