@@ -5,6 +5,7 @@ import '../../models/contact.dart';
 import '../../services/storage_service.dart';
 import '../../services/contact_service.dart';
 import '../../utils/logger.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final String? contactId;
@@ -58,9 +59,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFF7F8FA),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -84,18 +83,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               const SizedBox(height: 16),
               Text(
                 'Contact not found',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
               ),
               const SizedBox(height: 8),
               Text(
                 'Contact ID: ${widget.contactId ?? 'null'}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -127,10 +120,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     stops: [0.7, 1.0],
-                    colors: [
-                      Color(0xFF2563EB),
-                      Color(0xFF22D3EE),
-                    ],
+                    colors: [Color(0xFF2563EB), Color(0xFF22D3EE)],
                   ),
                 ),
               ),
@@ -199,7 +189,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               ),
             ],
           ),
-          
+
           // Contact Info Content with Floating Avatar
           SliverToBoxAdapter(
             child: Stack(
@@ -207,21 +197,23 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               children: [
                 // Main content with top padding for avatar space
                 Container(
-                  margin: const EdgeInsets.only(top: 45), // Space for floating avatar
+                  margin: const EdgeInsets.only(
+                    top: 45,
+                  ), // Space for floating avatar
                   child: Column(
                     children: [
                       // Profile Section (without avatar)
                       _buildProfileSectionWithoutAvatar(context, contact),
-                      
+
                       // Contact Info Section
                       _buildContactInfoSection(context, contact),
-                      
+
                       // Bottom padding
                       const SizedBox(height: 24),
                     ],
                   ),
                 ),
-                
+
                 // Floating Avatar positioned below header
                 Positioned(
                   top: 0, // Position at the top of content area, below header
@@ -259,21 +251,26 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(41), // Slightly smaller to account for border
+          borderRadius: BorderRadius.circular(
+            41,
+          ), // Slightly smaller to account for border
           child: _buildAvatarFallback(contact.name),
         ),
       ),
     );
   }
 
-  Widget _buildProfileSectionWithoutAvatar(BuildContext context, Contact contact) {
+  Widget _buildProfileSectionWithoutAvatar(
+    BuildContext context,
+    Contact contact,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           // Space for floating avatar
           const SizedBox(height: 45),
-          
+
           // Name
           Text(
             contact.name,
@@ -283,7 +280,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               color: Color(0xFF22223B),
             ),
           ),
-          
+
           // Company
           if (contact.company != null)
             Container(
@@ -297,7 +294,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 ),
               ),
             ),
-          
+
           // Action Buttons
           Container(
             margin: const EdgeInsets.only(bottom: 20),
@@ -368,7 +365,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               ),
             ),
           ),
-          
+
           if (contact.phone != null) ...[
             _buildInfoRow(
               icon: Icons.call_rounded,
@@ -379,7 +376,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
             _buildDivider(),
           ],
-          
+
           if (contact.email != null) ...[
             _buildInfoRow(
               icon: Icons.email_rounded,
@@ -390,7 +387,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
             _buildDivider(),
           ],
-          
+
           if (contact.company != null) ...[
             _buildInfoRow(
               icon: Icons.business_rounded,
@@ -400,7 +397,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
             _buildDivider(),
           ],
-          
+
           if (contact.website != null) ...[
             _buildInfoRow(
               icon: Icons.language_rounded,
@@ -411,20 +408,22 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
             _buildDivider(),
           ],
-          
+
           // Scan metadata section
           if (contact.source != null) ...[
             _buildInfoRow(
-              icon: contact.source == 'camera' 
-                  ? Icons.camera_alt_rounded 
+              icon: contact.source == 'camera'
+                  ? Icons.camera_alt_rounded
                   : Icons.photo_library_rounded,
               label: 'Scan Source',
-              value: contact.source == 'camera' ? 'Camera Capture' : 'Gallery Import',
+              value: contact.source == 'camera'
+                  ? 'Camera Capture'
+                  : 'Gallery Import',
               hasAction: false,
             ),
             _buildDivider(),
           ],
-          
+
           if (contact.confidence != null) ...[
             _buildInfoRow(
               icon: Icons.analytics_rounded,
@@ -435,7 +434,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
             _buildDivider(),
           ],
-          
+
           _buildInfoRow(
             icon: Icons.calendar_today_rounded,
             label: 'Added',
@@ -454,8 +453,19 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   String _getMonthName(int month) {
     const months = [
-      '', 'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      '',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month];
   }
@@ -463,7 +473,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   Widget _buildConfidenceIndicator(double confidence) {
     Color confidenceColor;
     String confidenceText;
-    
+
     if (confidence >= 0.9) {
       confidenceColor = Colors.green;
       confidenceText = 'Excellent';
@@ -477,7 +487,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       confidenceColor = Colors.red;
       confidenceText = 'Poor';
     }
-    
+
     return Row(
       children: [
         Text(
@@ -494,9 +504,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           decoration: BoxDecoration(
             color: confidenceColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: confidenceColor.withOpacity(0.3),
-            ),
+            border: Border.all(color: confidenceColor.withOpacity(0.3)),
           ),
           child: Text(
             confidenceText,
@@ -527,7 +535,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               )
             : null,
         color: isPrimary ? null : Colors.white,
-        border: isPrimary ? null : Border.all(color: const Color(0xFF2563EB), width: 1.5),
+        border: isPrimary
+            ? null
+            : Border.all(color: const Color(0xFF2563EB), width: 1.5),
         borderRadius: BorderRadius.circular(22),
         boxShadow: isPrimary
             ? [
@@ -567,8 +577,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
           ),
         ),
-      ),
-    );
+      ));
   }
 
   Widget _buildInfoRow({
@@ -595,11 +604,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   color: const Color(0xFFE0E7FF), // Light blue background
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: const Color(0xFF2563EB),
-                ),
+                child: Icon(icon, size: 20, color: const Color(0xFF2563EB)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -615,14 +620,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    customValue ?? Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold, // Value bold
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
+                    customValue ??
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold, // Value bold
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -642,8 +648,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ],
           ),
         ),
-      ),
-    );
+      ));
   }
 
   Widget _buildDivider() {
@@ -654,13 +659,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
   }
 
-
-
   Widget _buildAvatarFallback(String name) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF2563EB),
-        borderRadius: BorderRadius.circular(41), // Circular to match the ClipRRect
+        borderRadius: BorderRadius.circular(
+          41,
+        ), // Circular to match the ClipRRect
       ),
       child: Center(
         child: Text(
@@ -672,12 +677,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           ),
         ),
       ),
-    );
+    ); // Close Container in _buildAvatarFallback
   }
 
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
-    
+
     final parts = name.trim().split(' ');
     if (parts.length == 1) {
       return parts[0][0].toUpperCase();
@@ -686,30 +691,95 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  void _callContact(String? phone) {
-    if (phone != null) {
-      // TODO: Implement phone call
-      print('Calling $phone');
+  void _callContact(String? phoneNumber) async {
+    if (phoneNumber != null) {
+      // Only allow if phone number has at least 8 digits
+      final cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+      if (cleaned.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phone number is too short to call.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final Uri uri = Uri(scheme: 'tel', path: phoneNumber);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $uri'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      print('Calling $phoneNumber');
     }
   }
 
-  void _messageContact(String? phone) {
-    if (phone != null) {
-      // TODO: Implement SMS
-      print('Messaging $phone');
+  void _messageContact(String? phoneNumber) async {
+    if (phoneNumber != null) {
+      // Only allow if phone number has at least 8 digits
+      final cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+      if (cleaned.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phone number is too short to message.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final Uri uri = Uri(scheme: 'sms', path: phoneNumber);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $uri'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      print('Messaging $phoneNumber');
     }
   }
 
-  void _emailContact(String? email) {
-    if (email != null) {
-      // TODO: Implement email
+  void _emailContact(String? email) async {
+    if (email != null ) {
+      final Uri uri = Uri(scheme: 'mailto', path: email);
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          throw 'Could not launch $uri';
+        }
+      } catch (e) {
+        print('Error launching email client: $e');
+        throw e;
+      }
       print('Emailing $email');
+    } else {
+      print('Invalid email address: $email');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid email address'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  void _openWebsite(String? website) {
+  void _openWebsite(String? website) async {
     if (website != null) {
-      // TODO: Open website in browser
+       final Uri uri = Uri.parse(website);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication); // Open in browser
+    } else {
+      throw 'Could not launch $website';
+    }
       print('Opening $website');
     }
   }
@@ -742,10 +812,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               const SizedBox(width: 12),
               const Text(
                 'Delete Contact',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -763,9 +830,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.orange.withOpacity(0.3),
-                  ),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
                 ),
                 child: const Row(
                   children: [
@@ -778,10 +843,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     Expanded(
                       child: Text(
                         'This will remove the contact from both the app and your device contacts.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.orange,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.orange),
                       ),
                     ),
                   ],
@@ -793,14 +855,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ),
             ElevatedButton(
@@ -808,17 +870,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
                 'Delete',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -840,9 +902,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -897,7 +958,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       }
     } catch (e) {
       Logger.error('Failed to delete contact: $e');
-      
+
       // Close loading dialog if open
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
@@ -965,10 +1026,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                        ),
+                        icon: const Icon(Icons.close, color: Colors.white),
                       ),
                     ],
                   ),
@@ -984,10 +1042,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       bottomLeft: Radius.circular(16),
                       bottomRight: Radius.circular(16),
                     ),
-                    child: Image.file(
-                      imageFile,
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.file(imageFile, fit: BoxFit.contain),
                   ),
                 ),
               ],
@@ -997,6 +1052,4 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       );
     }
   }
-
-
 }

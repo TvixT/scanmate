@@ -44,12 +44,11 @@ class ScanService {
     print(recognizedText);
 
     // Clean up the text
-    final lines =
-        recognizedText
-            .split('\n')
-            .map((line) => line.trim())
-            .where((line) => line.isNotEmpty)
-            .toList();
+    final lines = recognizedText
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
 
     // Extract patterns
     for (final line in lines) {
@@ -63,27 +62,28 @@ class ScanService {
       }
 
       // Phone extraction
-      // Match international numbers starting with + and at least 8 digits, or US numbers
-      final intlPhoneRegex = RegExp(r'\+\d[\d\s\-]{7,}');
-      final usPhoneRegex = RegExp(
-        r'(\+?1?[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})',
+      // Match common US/international formats or any 8+ digit sequence
+      final phonePattern = RegExp(
+        r'(\+\d{7,}|[1-9]\d{2}-\d{3}-\d{4}|\(\d{3}\) \d{3}-\d{4}|[1-9]\d{2} \d{3} \d{4}|[1-9]\d{2}\.\d{3}\.\d{4})',
       );
-      final intlMatch = intlPhoneRegex.firstMatch(line);
-      final usMatch = usPhoneRegex.firstMatch(line);
-      if (intlMatch != null && !contactData.containsKey('phone')) {
-        // Clean up: keep + and digits only
-        contactData['phone'] = intlMatch
-            .group(0)!
-            .replaceAll(RegExp(r'[^\d+]'), '');
-      } else if (usMatch != null && !contactData.containsKey('phone')) {
-        String rawPhone = usMatch.group(0)!.replaceAll(RegExp(r'[^\d+]'), '');
-        if (line.trim().startsWith('+')) {
-          contactData['phone'] = rawPhone;
-        } else if (rawPhone.length == 10) {
-          contactData['phone'] =
-              '+1 (${rawPhone.substring(0, 3)}) ${rawPhone.substring(3, 6)}-${rawPhone.substring(6)}';
+      final digitPattern = RegExp(r'(\+?\d[\d\s\-\.\(\)]{7,}\d)'); // 8+ digits, allows separators
+      if (!contactData.containsKey('phone')) {
+        final phoneMatches = phonePattern.allMatches(line);
+        String? phoneCandidate;
+        if (phoneMatches.isNotEmpty) {
+          phoneCandidate = phoneMatches.first.group(0);
         } else {
-          contactData['phone'] = rawPhone;
+          final digitMatches = digitPattern.allMatches(line);
+          if (digitMatches.isNotEmpty) {
+            phoneCandidate = digitMatches.first.group(0);
+          }
+        }
+        if (phoneCandidate != null) {
+          // Clean up: keep + and digits only
+          final cleaned = phoneCandidate.replaceAll(RegExp(r'[^\d+]'), '');
+          if (cleaned.length >= 8) {
+            contactData['phone'] = cleaned;
+          }
         }
       }
 
@@ -113,22 +113,22 @@ class ScanService {
     return contactData;
   }
 
+  // Extract name and company (heuristic approach)
   static void _extractNameAndCompany(
     List<String> lines,
     Map<String, String> contactData,
   ) {
     // Skip lines that contain email, phone, or website
-    final contentLines =
-        lines.where((line) {
-          final lowerLine = line.toLowerCase();
-          return !lowerLine.contains('@') &&
-              !RegExp(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}').hasMatch(line) &&
-              !lowerLine.contains('www.') &&
-              !lowerLine.contains('.com') &&
-              !lowerLine.contains('.org') &&
-              !lowerLine.contains('.net') &&
-              line.length > 2;
-        }).toList();
+    final contentLines = lines.where((line) {
+      final lowerLine = line.toLowerCase();
+      return !lowerLine.contains('@') &&
+          !RegExp(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}').hasMatch(line) &&
+          !lowerLine.contains('www.') &&
+          !lowerLine.contains('.com') &&
+          !lowerLine.contains('.org') &&
+          !lowerLine.contains('.net') &&
+          line.length > 2;
+    }).toList();
 
     // Title extraction logic
     final titleKeywords = [
@@ -235,7 +235,6 @@ class ScanService {
       if (!contactData.containsKey('title')) {
         contactData['title'] = fallback;
       }
-
     }
   }
 

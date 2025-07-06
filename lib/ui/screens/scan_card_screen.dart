@@ -1,8 +1,12 @@
+import 'dart:io';
+//import 'dart:ui' as ui;
+import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../config/app_router.dart';
 import '../../services/scan_service.dart';
 import '../../utils/logger.dart';
@@ -90,10 +94,10 @@ class _ScanCardScreenState extends State<ScanCardScreen>
         children: [
           // Camera preview
           _buildCameraPreview(),
-          
+
           // Scanning overlay
           _buildScanningOverlay(),
-          
+
           // Bottom controls
           Positioned(
             bottom: 0,
@@ -101,7 +105,7 @@ class _ScanCardScreenState extends State<ScanCardScreen>
             right: 0,
             child: _buildBottomControls(),
           ),
-          
+
           // Loading overlay
           if (_isScanning) _buildLoadingOverlay(),
         ],
@@ -123,10 +127,7 @@ class _ScanCardScreenState extends State<ScanCardScreen>
       ),
       actions: [
         IconButton(
-          icon: const Icon(
-            Icons.photo_library_rounded,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.photo_library_rounded, color: Colors.white),
           onPressed: _selectFromGallery,
           tooltip: 'Import from Gallery',
         ),
@@ -200,27 +201,24 @@ class _ScanCardScreenState extends State<ScanCardScreen>
                         ),
                         child: const Center(
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.green,
+                            ),
                           ),
                         ),
                       )
-                    : Stack(
-                        children: [
-                          // Corner indicators
-                          _buildCornerIndicator(Alignment.topLeft),
-                          _buildCornerIndicator(Alignment.topRight),
-                          _buildCornerIndicator(Alignment.bottomLeft),
-                          _buildCornerIndicator(Alignment.bottomRight),
-                        ],
-                      ),
+                    : null, // No more Stack with corner indicators
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Instructions
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 32),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(8),
@@ -242,21 +240,6 @@ class _ScanCardScreenState extends State<ScanCardScreen>
     );
   }
 
-  Widget _buildCornerIndicator(Alignment alignment) {
-    return Align(
-      alignment: alignment,
-      child: Container(
-        width: 20,
-        height: 20,
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 2),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBottomControls() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -264,10 +247,7 @@ class _ScanCardScreenState extends State<ScanCardScreen>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withOpacity(0.8),
-          ],
+          colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
         ),
       ),
       child: Row(
@@ -279,7 +259,7 @@ class _ScanCardScreenState extends State<ScanCardScreen>
             onPressed: _selectFromGallery,
             size: 28,
           ),
-          
+
           // Capture button
           GestureDetector(
             onTap: _isScanning ? null : _captureImage,
@@ -297,7 +277,9 @@ class _ScanCardScreenState extends State<ScanCardScreen>
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       ),
@@ -309,7 +291,7 @@ class _ScanCardScreenState extends State<ScanCardScreen>
                     ),
             ),
           ),
-          
+
           // Switch camera button
           _buildControlButton(
             icon: Icons.switch_camera_outlined,
@@ -381,23 +363,33 @@ class _ScanCardScreenState extends State<ScanCardScreen>
   Future<void> _switchCamera() async {
     if (_cameras != null && _cameras!.length > 1) {
       try {
-        final currentCameraIndex = _cameras!.indexOf(_cameraController!.description);
+        final currentCameraIndex = _cameras!.indexOf(
+          _cameraController!.description,
+        );
         final newCameraIndex = (currentCameraIndex + 1) % _cameras!.length;
-        
+
         await _cameraController!.dispose();
-        
+
         _cameraController = CameraController(
           _cameras![newCameraIndex],
           ResolutionPreset.high,
           enableAudio: false,
         );
-        
+
         await _cameraController!.initialize();
         setState(() {});
       } catch (e) {
         Logger.error('Failed to switch camera: $e');
       }
     }
+  }
+
+  Future<String> _saveToTempFile(String originalPath) async {
+    final tempDir = await getTemporaryDirectory();
+    final fileName = originalPath.split(Platform.pathSeparator).last;
+    final tempPath = '${tempDir.path}/scanmate_$fileName';
+    final tempFile = File(originalPath).copySync(tempPath);
+    return tempFile.path;
   }
 
   Future<void> _captureImage() async {
@@ -412,7 +404,8 @@ class _ScanCardScreenState extends State<ScanCardScreen>
 
     try {
       final XFile image = await _cameraController!.takePicture();
-      await _processImage(image.path);
+      final tempPath = await _saveToTempFile(image.path);
+      await _processImage(tempPath);
     } catch (e) {
       Logger.error('Failed to capture image: $e');
       _showError('Failed to capture image. Please try again.');
@@ -429,14 +422,14 @@ class _ScanCardScreenState extends State<ScanCardScreen>
         source: ImageSource.gallery,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         setState(() {
           _isScanning = true;
           _scanInstructions = 'Processing image...';
         });
-        
-        await _processGalleryImage(image.path);
+        final tempPath = await _saveToTempFile(image.path);
+        await _processGalleryImage(tempPath);
       }
     } catch (e) {
       Logger.error('Failed to select image from gallery: $e');
@@ -444,27 +437,72 @@ class _ScanCardScreenState extends State<ScanCardScreen>
     }
   }
 
-  Future<void> _processGalleryImage(String imagePath) async {
+  Future<File> _cropToScanArea(String imagePath) async {
+    // Load image
+    final bytes = await File(imagePath).readAsBytes();
+    final original = img.decodeImage(bytes);
+    if (original == null) return File(imagePath);
+
+    // Camera preview size (full image)
+    final width = original.width;
+    final height = original.height;
+
+    // Scan area size (as in overlay)
+    const scanAreaWidth = 320.0;
+    const scanAreaHeight = 200.0;
+    // Assume preview is 360x640 (portrait)
+    final cropWidth = (scanAreaWidth / 360.0) * width;
+    final cropHeight = (scanAreaHeight / 640.0) * height;
+    final left = ((width - cropWidth) / 2).round();
+    final top = ((height - cropHeight) / 2).round();
+
+    final cropped = img.copyCrop(
+      original,
+      x: left,
+      y: top,
+      width: cropWidth.round(),
+      height: cropHeight.round(),
+    );
+
+    // Save cropped image to temp file
+    final croppedFile = File('${imagePath}_cropped.jpg');
+    await croppedFile.writeAsBytes(img.encodeJpg(cropped));
+    return croppedFile;
+  }
+
+  Future<void> _processImage(String imagePath) async {
     try {
-      // Create InputImage from file path
-      final inputImage = InputImage.fromFilePath(imagePath);
-      
+      // Crop to scan area
+      final croppedFile = await _cropToScanArea(imagePath);
+      final inputImage = InputImage.fromFilePath(croppedFile.path);
+
       // Perform OCR
       final recognizedText = await _textRecognizer.processImage(inputImage);
-      
+
       // Extract contact information using ScanService
-      final contactData = await ScanService.extractContactInfo(recognizedText.text);
-      
+      final contactData = await ScanService.extractContactInfo(
+        recognizedText.text,
+      );
+
       // Add image path and source to contact data
       contactData['imagePath'] = imagePath;
-      contactData['source'] = 'gallery'; // Mark as gallery source
-      
+      contactData['source'] = 'camera'; // Mark as camera source
+
       if (mounted) {
-        if (contactData.isNotEmpty && contactData.length > 2) { // More than just imagePath and source
+        if (contactData.isNotEmpty && contactData.length > 2) {
+          // More than just imagePath and source
           // Navigate to review screen with extracted data
-          context.push(AppRouter.reviewContact, extra: contactData);
+          await context.push(AppRouter.reviewContact, extra: contactData);
+          if (mounted) {
+            setState(() {
+              _isScanning = false;
+              _scanInstructions = 'Position the business card within the frame';
+            });
+          }
         } else {
-          _showError('No text found in the image. Please try again with a clearer photo.');
+          _showError(
+            'No text found in the image. Please try again with a clearer photo.',
+          );
           setState(() {
             _isScanning = false;
             _scanInstructions = 'Position the business card within the frame';
@@ -483,27 +521,39 @@ class _ScanCardScreenState extends State<ScanCardScreen>
     }
   }
 
-  Future<void> _processImage(String imagePath) async {
+  Future<void> _processGalleryImage(String imagePath) async {
     try {
-      // Create InputImage from file path
-      final inputImage = InputImage.fromFilePath(imagePath);
-      
+      // Crop to scan area
+      final croppedFile = await _cropToScanArea(imagePath);
+      final inputImage = InputImage.fromFilePath(croppedFile.path);
+
       // Perform OCR
       final recognizedText = await _textRecognizer.processImage(inputImage);
-      
+
       // Extract contact information using ScanService
-      final contactData = await ScanService.extractContactInfo(recognizedText.text);
-      
+      final contactData = await ScanService.extractContactInfo(
+        recognizedText.text,
+      );
+
       // Add image path and source to contact data
       contactData['imagePath'] = imagePath;
-      contactData['source'] = 'camera'; // Mark as camera source
-      
+      contactData['source'] = 'gallery'; // Mark as gallery source
+
       if (mounted) {
-        if (contactData.isNotEmpty && contactData.length > 2) { // More than just imagePath and source
+        if (contactData.isNotEmpty && contactData.length > 2) {
+          // More than just imagePath and source
           // Navigate to review screen with extracted data
-          context.push(AppRouter.reviewContact, extra: contactData);
+          await context.push(AppRouter.reviewContact, extra: contactData);
+          if (mounted) {
+            setState(() {
+              _isScanning = false;
+              _scanInstructions = 'Position the business card within the frame';
+            });
+          }
         } else {
-          _showError('No text found in the image. Please try again with a clearer photo.');
+          _showError(
+            'No text found in the image. Please try again with a clearer photo.',
+          );
           setState(() {
             _isScanning = false;
             _scanInstructions = 'Position the business card within the frame';
@@ -545,8 +595,8 @@ class ScanOverlayPainter extends CustomPainter {
     final scanAreaWidth = 320.0;
     final scanAreaHeight = 200.0;
     final scanAreaLeft = (size.width - scanAreaWidth) / 2;
-    final scanAreaTop = (size.height - scanAreaHeight) / 2;
-    
+    final scanAreaTop = (size.height - scanAreaHeight) / 2.5;
+
     final scanRect = Rect.fromLTWH(
       scanAreaLeft,
       scanAreaTop,
@@ -554,12 +604,63 @@ class ScanOverlayPainter extends CustomPainter {
       scanAreaHeight,
     );
 
-    // Create path for overlay (everything except scan area)
-    final fullScreenPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final scanAreaPath = Path()..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(12)));
-    
-    final overlayPath = Path.combine(PathOperation.difference, fullScreenPath, scanAreaPath);
+    // Overlay (everything except scan area)
+    final fullScreenPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final scanAreaPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(12)));
+    final overlayPath = Path.combine(
+      PathOperation.difference,
+      fullScreenPath,
+      scanAreaPath,
+    );
     canvas.drawPath(overlayPath, paint);
+
+    // Draw triangle corner indicators
+    final trianglePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    //const triangleSize = 18.0;
+    const borderRadius = 12.0;
+
+    // Top-left
+    final topLeft = Offset(scanAreaLeft, scanAreaTop);
+    final topLeftTriangle = Path()
+      ..moveTo(topLeft.dx + borderRadius, topLeft.dy)
+      ..lineTo(topLeft.dx, topLeft.dy)
+      ..lineTo(topLeft.dx, topLeft.dy + borderRadius)
+      ..close();
+    canvas.drawPath(topLeftTriangle, trianglePaint);
+
+    // Top-right
+    final topRight = Offset(scanAreaLeft + scanAreaWidth, scanAreaTop);
+    final topRightTriangle = Path()
+      ..moveTo(topRight.dx - borderRadius, topRight.dy)
+      ..lineTo(topRight.dx, topRight.dy)
+      ..lineTo(topRight.dx, topRight.dy + borderRadius)
+      ..close();
+    canvas.drawPath(topRightTriangle, trianglePaint);
+
+    // Bottom-left
+    final bottomLeft = Offset(scanAreaLeft, scanAreaTop + scanAreaHeight);
+    final bottomLeftTriangle = Path()
+      ..moveTo(bottomLeft.dx + borderRadius, bottomLeft.dy)
+      ..lineTo(bottomLeft.dx, bottomLeft.dy)
+      ..lineTo(bottomLeft.dx, bottomLeft.dy - borderRadius)
+      ..close();
+    canvas.drawPath(bottomLeftTriangle, trianglePaint);
+
+    // Bottom-right
+    final bottomRight = Offset(
+      scanAreaLeft + scanAreaWidth,
+      scanAreaTop + scanAreaHeight,
+    );
+    final bottomRightTriangle = Path()
+      ..moveTo(bottomRight.dx - borderRadius, bottomRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy - borderRadius)
+      ..close();
+    canvas.drawPath(bottomRightTriangle, trianglePaint);
   }
 
   @override

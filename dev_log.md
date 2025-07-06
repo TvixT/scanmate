@@ -1907,8 +1907,8 @@ try {
 #### Business Value
 - **Trust Building**: Accurate data builds user confidence in app reliability
 - **Usage Awareness**: Users can track their scanning productivity
-- **Feature Discovery**: Statistics highlight app value and encourage continued use
-- **Data-Driven Decisions**: Users can see patterns in their contact management
+- **Feature Discovery**: Onboarding showcases app capabilities
+- **User Retention**: Positive first experience improves long-term engagement
 
 ### Quality Assurance
 
@@ -1942,10 +1942,22 @@ try {
 - These changes make ScanMate more robust and user-friendly for a wider range of scanned documents and international users.
 
 ### How
-- Updated phone extraction in `ScanService.extractContactInfo` to:
-  - Use a regex for international numbers starting with "+" and at least 8 digits.
-  - Fallback to US number extraction and formatting if not international.
-- Added address extraction in `_extractNameAndCompany`:
-  - Scans for lines containing a comma or period, and both numbers and letters.
-  - Sets the first such line as the address if not already set.
-- Retained and improved fallback logic for non-English or unrecognized text, ensuring all key fields are populated when possible.
+- Updated `scan_service.dart`:
+  - Phone extraction now finds any phone-like pattern or 8+ digit sequence in a line, not just the first match
+  - Address extraction improved for lines with numbers, letters, and punctuation
+  - Fallback logic assigns first available line to missing fields (name, title, address)
+  - Added debug print statements for pre- and post-extraction
+- Updated `scan_card_screen.dart`:
+  - Crops images to the scan area before OCR
+  - Always processes images from a saved temporary file (camera/gallery)
+  - Uses CustomPainter to draw triangle corner indicators flush with the scan area
+  - Resets `_isScanning` after returning from review screen
+- Updated `contact_detail_screen.dart`:
+  - Added phone number validation (must have at least 8 digits) before calling/messaging
+  - Shows snackbar if phone number is too short or invalid
+  - Fixed all unmatched parentheses and widget tree errors
+- General:
+  - Improved error handling and user feedback throughout the app
+  - All changes documented and integrated into the UI and dev log
+
+---
