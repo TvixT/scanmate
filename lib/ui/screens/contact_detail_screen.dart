@@ -6,6 +6,7 @@ import '../../services/storage_service.dart';
 import '../../services/contact_service.dart';
 import '../../utils/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final String? contactId;
@@ -577,7 +578,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
           ),
         ),
-      ));
+      ),
+    );
   }
 
   Widget _buildInfoRow({
@@ -648,7 +650,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ],
           ),
         ),
-      ));
+      ),
+    );
   }
 
   Widget _buildDivider() {
@@ -748,19 +751,25 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   void _emailContact(String? email) async {
-    if (email != null ) {
-      final Uri uri = Uri(scheme: 'mailto', path: email);
+    if (email != null && email.isNotEmpty) {
+      final Email emailToSend = Email(
+        recipients: [email],
+        subject: '',
+        body: '',
+        isHTML: false,
+      );
       try {
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
-        } else {
-          throw 'Could not launch $uri';
-        }
+        await FlutterEmailSender.send(emailToSend);
+        print('Email intent sent to $email');
       } catch (e) {
         print('Error launching email client: $e');
-        throw e;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open email client.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-      print('Emailing $email');
     } else {
       print('Invalid email address: $email');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -774,12 +783,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   void _openWebsite(String? website) async {
     if (website != null) {
-       final Uri uri = Uri.parse(website);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication); // Open in browser
-    } else {
-      throw 'Could not launch $website';
-    }
+      final Uri uri = Uri.parse(website);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        ); // Open in browser
+      } else {
+        throw 'Could not launch $website';
+      }
       print('Opening $website');
     }
   }
